@@ -50,11 +50,11 @@ def dict_to_frame(x: dict, index_type=None, orient='index', columns=None, column
     return y
 
 
-def generate_id(salt):
+def generate_id(salt, n=12, suffix='i'):
     """
     Unique ID generator
     """
-    return 'i' + hashlib.sha256((salt + f"{(monotonic() + perf_counter()):.25f}").encode('utf-8')).hexdigest()[:12].upper()
+    return (suffix if suffix else '') + hashlib.sha256((salt + f"{(monotonic() + perf_counter()):.25f}").encode('utf-8')).hexdigest()[:n].upper()
 
 
 def get_short_id(s: str):
