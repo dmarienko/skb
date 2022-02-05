@@ -1,11 +1,56 @@
 import hashlib
 from time import gmtime, strftime, sleep, monotonic, perf_counter
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, namedtuple, defaultdict
 import re
 import pandas as pd
 
 from skb.structs import mstruct
+from ira.utils.nb_functions import z_ls, z_ld, z_save
 
+
+def __wrap_with_color(code):
+    def inner(text, bold=False):
+        c = code
+        if bold:
+            c = "1;%s" % c
+        return "\033[%sm%s\033[0m" % (c, text)
+
+    return inner
+
+
+red, green, yellow, blue, magenta, cyan, white = (
+    __wrap_with_color('31'),
+    __wrap_with_color('32'),
+    __wrap_with_color('33'),
+    __wrap_with_color('34'),
+    __wrap_with_color('35'),
+    __wrap_with_color('36'),
+    __wrap_with_color('37'),
+)
+
+
+def kls(host=None):
+    """
+    Temporary records display utility
+    """
+    paths = defaultdict(list)
+    for n in z_ls('knodes', host=host, dbname='skb'):
+        d = z_ld(n, host=host, dbname='skb')
+        paths[d['path']].append(d)
+        
+    for p, vs in sorted(paths.items()): 
+        hdr = yellow(f" ---[ ") + magenta(p) + yellow(" ]".ljust(20, '-'))
+        print(hdr)
+        for d in vs:
+            descr = '\n\t\t\t'.join(d['description'].split('\n'))
+            tags = '|'.join(d['tags'])
+            print(f"    {blue(d['id'])} {red(pd.Timestamp(d['created']).strftime('%d/%b/%y %H:%M:%S'))} <|{yellow(d['name'])}|> {cyan(tags)}\n\t\t\t{ green(descr) }")
+            refs = d.get('reference')
+            if refs is not None and refs:
+                refs = '\n\t\t'.join([refs] if not isinstance(refs, list) else refs)
+                print(f"\t\tlinks: {blue(refs)}")
+        print('\n')
+        
 
 def dict2struct(d: dict):
     """
